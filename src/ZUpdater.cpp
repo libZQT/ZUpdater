@@ -30,19 +30,21 @@ ZUpdater::ZUpdater(const QString &repoOwnerSlashName,
                    const QString &currentVersion,
                    const QString &applicationName,
                    UpdateProcedure updateProcedure, bool isPortable,
-                   bool isPackageManagerManaged, QObject *parent)
+                   bool isPackageManagerManaged, bool skipPrerelease,
+                   QObject *parent)
     : QObject(parent), m_repoOwnerSlashName(repoOwnerSlashName),
       m_currentVersion(currentVersion), m_applicationName(applicationName),
       m_networkManager(new QNetworkAccessManager(this)),
       m_isPortable(isPortable),
       m_isPackageManagerManaged(isPackageManagerManaged),
-      m_updateProcedure(updateProcedure)
+      m_skipPrerelease(skipPrerelease), m_updateProcedure(updateProcedure)
 {
     // Detect platform and architecture
     m_platform = detectPlatform();
     m_architecture = detectArchitecture();
 
-    qDebug() << "Platform:" << m_platform << "Architecture:" << m_architecture
+    qDebug() << "ZUpdater: Platform:" << m_platform
+             << "Architecture:" << m_architecture
              << "Portable:" << m_isPortable;
 }
 
@@ -141,6 +143,10 @@ void ZUpdater::checkUpdatesInternal(QJsonDocument jsonDoc)
         if (!releaseVal.isObject())
             continue;
         QJsonObject releaseObj = releaseVal.toObject();
+        if (m_skipPrerelease) {
+            if (releaseObj.value("prerelease").toBool())
+                continue;
+        }
         QString tagName = releaseObj.value("tag_name").toString();
         if (tagName.isEmpty())
             continue;

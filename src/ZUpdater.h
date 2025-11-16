@@ -40,7 +40,7 @@ public:
     ZUpdater(const QString &repoOwnerSlashName, const QString &currentVersion,
              const QString &applicationName, UpdateProcedure updateProcedure,
              bool isPortable = false, bool isPackageManagerManaged = false,
-             QObject *parent = nullptr);
+             bool skipPrerelease = false, QObject *parent = nullptr);
     ~ZUpdater();
 
     void checkForUpdates();
@@ -77,6 +77,7 @@ private:
     QString m_applicationName;
     bool m_isPortable;
     bool m_isPackageManagerManaged;
+    bool m_skipPrerelease;
     UpdateProcedure m_updateProcedure;
 
     Platform::Type m_platform;
