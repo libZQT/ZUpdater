@@ -68,7 +68,7 @@ public slots:
 private slots:
     void finished(const QUrl &url);
     void metaDataChanged();
-    void openDownload();
+    bool openDownload();
     void installUpdate();
     void cancelDownload();
     void saveFile(qint64 received, qint64 total);
@@ -77,6 +77,9 @@ private slots:
     void calculateTimeRemaining(qint64 received, qint64 total);
 
 private:
+#ifdef __linux__
+    QString extractAppImage(const QString &zipPath);
+#endif
     qreal round(const qreal &input);
     UpdateProcedure m_updateProcedure;
 

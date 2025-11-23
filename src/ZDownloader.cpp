@@ -36,6 +36,11 @@
 #include <QTimer>
 #include <math.h>
 
+#ifdef __linux__
+#include <QFileInfo>
+#include <zip.h>
+#endif
+
 static const QString PARTIAL_DOWN(".part");
 
 ZDownloader::ZDownloader(UpdateProcedure updateProcedure, QWidget *parent)
@@ -151,6 +156,25 @@ void ZDownloader::finished(const QUrl &url)
     QFile::rename(m_downloadDir.filePath(m_fileName + PARTIAL_DOWN),
                   m_downloadDir.filePath(m_fileName));
 
+#ifdef __linux__
+    if (m_fileName.endsWith("AppImage.zip", Qt::CaseInsensitive)) {
+        QString zipPath = m_downloadDir.filePath(m_fileName);
+        QString extractedAppImagePath = extractAppImage(zipPath);
+
+        if (!extractedAppImagePath.isEmpty()) {
+            QFile::remove(zipPath); // Clean up the zip file
+            m_fileName =
+                QFileInfo(extractedAppImagePath)
+                    .fileName(); // Update file name for installUpdate()
+        } else {
+            QMessageBox::critical(this, tr("Error"),
+                                  tr("Failed to extract update from archive."));
+            hide();
+            return;
+        }
+    }
+#endif
+
     /* Notify application */
     emit downloadFinished(url, m_downloadDir.filePath(m_fileName));
 
@@ -165,17 +189,27 @@ void ZDownloader::finished(const QUrl &url)
  * \note If the downloaded file is not found, then the function will alert the
  *       user about the error.
  */
-void ZDownloader::openDownload()
+bool ZDownloader::openDownload()
 {
-    if (!m_fileName.isEmpty())
+
+    if (!m_fileName.isEmpty()) {
+#ifdef __linux__
+        if (m_fileName.endsWith(".AppImage", Qt::CaseInsensitive)) {
+            QProcess::startDetached(m_downloadDir.filePath(m_fileName),
+                                    QStringList());
+            return true;
+        }
+#endif
         QDesktopServices::openUrl(
             QUrl::fromLocalFile(m_downloadDir.filePath(m_fileName)));
-
-    else {
+        return true;
+    } else {
         QMessageBox::critical(this, tr("Error"),
                               tr("Cannot find downloaded update!"),
                               QMessageBox::Close);
     }
+
+    return false;
 }
 
 /**
@@ -205,8 +239,10 @@ void ZDownloader::installUpdate()
             if (m_updateProcedure.quitApp) {
                 // QProcess::startDetached(m_downloadDir.filePath(m_fileName),
                 //                         QStringList());
-                openDownload();
-                QTimer::singleShot(0, []() { return qApp->quit(); });
+                bool opened = openDownload();
+                if (opened) {
+                    QTimer::singleShot(0, []() { return qApp->quit(); });
+                }
                 return;
             }
             openDownload();
@@ -398,6 +434,87 @@ void ZDownloader::calculateTimeRemaining(qint64 received, qint64 total)
         m_ui->timeLabel->setText(tr("Time remaining") + ": " + timeString);
     }
 }
+
+#ifdef __linux__
+QString ZDownloader::extractAppImage(const QString &zipPath)
+{
+    int err = 0;
+    zip *z = zip_open(zipPath.toUtf8().constData(), 0, &err);
+    if (!z) {
+        qWarning() << "Failed to open zip archive:" << zipPath
+                   << "error:" << err;
+        return QString();
+    }
+
+    zip_stat_t sb;
+    QString appImageName;
+    int appImageIndex = -1;
+
+    for (int i = 0; i < zip_get_num_entries(z, 0); i++) {
+        if (zip_stat_index(z, i, 0, &sb) == 0) {
+            if (QString::fromUtf8(sb.name).endsWith(".AppImage",
+                                                    Qt::CaseInsensitive)) {
+                appImageName = QString::fromUtf8(sb.name);
+                appImageIndex = i;
+                break;
+            }
+        }
+    }
+
+    if (appImageIndex == -1) {
+        qWarning() << "No .AppImage file found in the archive.";
+        zip_close(z);
+        return QString();
+    }
+
+    zip_file *f = zip_fopen_index(z, appImageIndex, 0);
+    if (!f) {
+        qWarning() << "Failed to open file in zip archive.";
+        zip_close(z);
+        return QString();
+    }
+
+    QString extractedFilePath =
+        m_downloadDir.filePath(QFileInfo(appImageName).fileName());
+
+    QFile outFile(extractedFilePath);
+    if (!outFile.open(QIODevice::WriteOnly)) {
+        qWarning() << "Failed to open output file for writing:"
+                   << extractedFilePath;
+        zip_fclose(f);
+        zip_close(z);
+        return QString();
+    }
+
+    char buf[1024 * 64];
+    zip_int64_t n;
+    while ((n = zip_fread(f, buf, sizeof(buf))) > 0) {
+        if (outFile.write(buf, n) != n) {
+            qWarning() << "Failed to write to output file.";
+            outFile.close();
+            QFile::remove(extractedFilePath);
+            zip_fclose(f);
+            zip_close(z);
+            return QString();
+        }
+    }
+
+    outFile.close();
+    zip_fclose(f);
+    zip_close(z);
+
+    // Set executable permissions (755)
+    if (!outFile.setPermissions(QFile::ReadOwner | QFile::WriteOwner |
+                                QFile::ExeOwner | QFile::ReadGroup |
+                                QFile::ExeGroup | QFile::ReadOther |
+                                QFile::ExeOther)) {
+        qWarning() << "Failed to set executable permission on"
+                   << extractedFilePath;
+    }
+
+    return extractedFilePath;
+}
+#endif
 
 /**
  * Rounds the given \a input to two decimal places

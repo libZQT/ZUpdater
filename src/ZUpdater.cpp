@@ -298,7 +298,7 @@ QString ZUpdater::detectAssetPattern()
     } else if (m_platform == Platform::Linux) {
         QString arch =
             (m_architecture == Architecture::x86_64) ? "x86_64" : "arm64";
-        pattern = QString(".*-Linux_%1\\.appimage$").arg(arch);
+        pattern = QString(".*-Linux_%1\\.AppImage\\.zip$").arg(arch);
     }
 
     return pattern;

@@ -15,6 +15,9 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(ZIP REQUIRED IMPORTED_TARGET libzip)
+
 # Find Qt6 components
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core Widgets Network Concurrent)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Network Concurrent)
@@ -45,6 +48,7 @@ target_link_libraries(ZUpdater
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Network
     Qt${QT_VERSION_MAJOR}::Concurrent
+    PkgConfig::ZIP
 )
 
 # Include directories
