@@ -10,7 +10,7 @@ Currently being used in [iDescriptor](https://github.com/iDescriptor/iDescriptor
 
 - Check for updates
 - Download updates
-- Users click install button
+- Single click to install the update
 
 # How to use ?
 
