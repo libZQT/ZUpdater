@@ -169,7 +169,8 @@ void ZUpdater::checkUpdatesInternal(QJsonDocument jsonDoc)
     }
 
     if (latestVersionObj.isEmpty()) {
-        qWarning() << "latestVersionObj is emty";
+        emit dataAvailable(jsonDoc, false);
+        qWarning() << "latestVersionObj is empty";
         return;
     }
 
@@ -180,6 +181,8 @@ void ZUpdater::checkUpdatesInternal(QJsonDocument jsonDoc)
     }
     QString assetPattern = detectAssetPattern();
     qDebug() << "Looking for asset matching pattern:" << assetPattern;
+
+    emit dataAvailable(jsonDoc, true);
 
     // Linux scenario
     if (m_platform == Platform::Linux) {

@@ -61,6 +61,9 @@ public:
     static Platform::Type detectPlatform();
     static Architecture::Type detectArchitecture();
 
+signals:
+    void dataAvailable(const QJsonDocument data, bool isUpdateAvailable);
+
 private:
     bool compareVersions(const QString &currentVersion,
                          const QString &latestVersion);
