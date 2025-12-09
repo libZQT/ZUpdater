@@ -4,7 +4,7 @@ ZUpdater is a simple library to help you manage updates for your Qt application.
 
 Currently being used in [iDescriptor](https://github.com/iDescriptor/iDescriptor)
 
-**Expect breaking changes as this is still in early development stage. This readme will be kept to update**
+**Expect breaking changes as this is still in early development stage. This readme will be kept up to date.**
 
 # Features
 
