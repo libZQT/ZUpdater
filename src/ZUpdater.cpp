@@ -117,7 +117,6 @@ void ZUpdater::checkForUpdates()
         QByteArray response = reply->readAll();
         reply->deleteLater();
         QJsonDocument jsonDoc = QJsonDocument::fromJson(response);
-        qDebug() << "Received update data:" << jsonDoc;
         checkUpdatesInternal(jsonDoc);
     });
 }
