@@ -334,7 +334,7 @@ void ZDownloader::calculateSizes(qint64 received, qint64 total)
     else
         receivedSize = tr("%1 MB").arg(received / 1048576);
 
-    m_ui->downloadLabel->setText(tr("Downloading updates") + " (" +
+    m_ui->downloadLabel->setText(tr("Downloading update") + " (" +
                                  receivedSize + " " + tr("of") + " " +
                                  totalSize + ")");
 }
@@ -379,7 +379,7 @@ void ZDownloader::updateProgress(qint64 received, qint64 total)
         m_ui->progressBar->setMinimum(0);
         m_ui->progressBar->setMaximum(0);
         m_ui->progressBar->setValue(-1);
-        m_ui->downloadLabel->setText(tr("Downloading Updates") + "...");
+        m_ui->downloadLabel->setText(tr("Downloading Update") + "...");
         m_ui->timeLabel->setText(
             QString("%1: %2").arg(tr("Time Remaining")).arg(tr("Unknown")));
     }
